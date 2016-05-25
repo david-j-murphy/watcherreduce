@@ -1,0 +1,10 @@
+setup.py
+bin/wreduce-folder
+watcherreduce/__init__.py
+watcherreduce/reduce.py
+watcherreduce.egg-info/PKG-INFO
+watcherreduce.egg-info/SOURCES.txt
+watcherreduce.egg-info/dependency_links.txt
+watcherreduce.egg-info/not-zip-safe
+watcherreduce.egg-info/requires.txt
+watcherreduce.egg-info/top_level.txt
