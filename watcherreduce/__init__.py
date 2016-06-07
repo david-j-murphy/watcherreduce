@@ -10,13 +10,13 @@ import datetime
 import requests
 import io
 
-watcherserver = 'http://ssamr.ucd.ie'
+WATCHERSERVER = 'http://ssamr.ucd.ie'
 
 from pynapple import getpynfilter, HEADERCONFIG
 
 
 def searchMasterFlat(night, filter, limit=100, allowNewer=True):
-	url = "%s/flatsearch?date=%04d-%02d-%02d&filter=%s&newer=%s&limit=%d" % (watcherserver, night.year, night.month, night.day, filter, allowNewer, limit)
+	url = "%s/flatsearch?date=%04d-%02d-%02d&filter=%s&newer=%s&limit=%d" % (WATCHERSERVER, night.year, night.month, night.day, filter, allowNewer, limit)
 	response = requests.get(url)
 	if response.status_code == requests.codes.ok:
 		datestring = response.json()['date']
@@ -26,7 +26,7 @@ def searchMasterFlat(night, filter, limit=100, allowNewer=True):
 		return None
 
 def downloadMasterFlat(night, filter):
-	url = "%s/getflat?date=%04d-%02d-%02d&filter=%s" % (watcherserver, night.year, night.month, night.day, filter)
+	url = "%s/getflat?date=%04d-%02d-%02d&filter=%s" % (WATCHERSERVER, night.year, night.month, night.day, filter)
 	response = requests.get(url)
 	fitsfile = io.BytesIO(response.content)
 	masterflathdu = pyfits.open(fitsfile)[0]
