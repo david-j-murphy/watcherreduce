@@ -6,6 +6,8 @@ import sys, optparse
 
 import datetime
 
+VERBOSE = False
+
 class flatcache:
 	def __init__(self):
 		self.cache = {}
@@ -19,31 +21,43 @@ class flatcache:
 		self.cache[str(flatdate.date())][filter] = hdu
 
 
-def easyReduceFolder(inputfolder, outputfolder, suffix='_red'):
+def easyReduceFolder(inputfolder, outputfolder, suffix, verbose):
 	files = [os.path.join(inputfolder, filename) for filename in os.listdir(inputfolder) if filename.endswith('.fits')]
 	files.sort()
 	downloaded = flatcache()
-	for fitspath in files:
+	numfiles = len(files)
+	for fileindex, fitspath in enumerate(files):
+
+		skip = False
+		alreadydown = False
+
 		imagehdu = pyfits.open(fitspath)[0]
 		flatNight, filter = wr.findFlatDetailsForHDU(imagehdu)
 		# Do we already have a master flat that matches this night? 
 		masterflathdu = downloaded.get(flatNight, filter)
-		if not masterflathdu:
+		if masterflathdu:
+			alreadydown = True
+		else:
 			# If we don't, what is the correct flat for this night?
 			validNight = wr.searchMasterFlat(flatNight, filter, limit = 100, allowNewer = True)
 			if not validNight:
 				# If we can't find a valid flat, just skip reducing this file.
-				print 'Unable to find valid flat for %s, skipping.' % os.path.split(fitspath)[1]
+				print '%d/%d: %s Unable to find valid flat, skipping.' % (fileindex+1, numfiles, os.path.split(fitspath)[1])
 				continue
 			# Did we already download it?
 			masterflathdu = downloaded.get(validNight, filter)
-			if not masterflathdu:
-			# If not, let's download it.
+			if masterflathdu:
+				alreadydown = True
+			else:
+				# If not, let's download it.
 				masterflathdu = wr.downloadMasterFlat(validNight, filter)
 				# And let's store it.
 				downloaded.save(validNight, filter, masterflathdu)
 			# Update the cache to point to it in future.
 			downloaded.save(flatNight, filter, masterflathdu)
+
+		if verbose:
+			print '%*d/%d: %s %c%s' % (len('%d' % numfiles), fileindex+1, numfiles, os.path.split(fitspath)[1], '*' if alreadydown else ' ', validNight.date())
 
 
 		reducedhdu = reduce.reduceImage(imagehdu, masterflathdu)
@@ -55,8 +69,10 @@ def easyReduceFolder(inputfolder, outputfolder, suffix='_red'):
 
 def main(argv):
 	parser = optparse.OptionParser(usage = '%prog <input folder> [options]')
-	parser.add_option('-o', '--output', help = 'Specify an output folder')
-	parser.add_option('-s', '--suffix', help = 'Specify a suffix to be appended to processed filenames before the extension', default = '_red')
+	parser.add_option('-o', '--output', dest='output', help = 'Specify an output folder')
+	parser.add_option('-s', '--suffix', dest='suffix', help = 'Specify a suffix to be appended to processed filenames before the extension', default = '_red')
+	parser.add_option('-v', '--verbose', action='store_true', dest='verbose', help = 'Verbose output', default = False)
+
 
 	(opts, args) = parser.parse_args()
 
@@ -74,7 +90,7 @@ def main(argv):
 	else:
 		outputfolder = ''
 
-	easyReduceFolder(inputfolder, outputfolder, suffix = opts.suffix)
+	easyReduceFolder(inputfolder, outputfolder, opts.suffix, opts.verbose)
 
 
 if __name__ == '__main__':
