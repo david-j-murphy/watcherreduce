@@ -3,10 +3,8 @@ import pyfits
 import watcherreduce as wr
 from watcherreduce import reduce
 import sys, optparse
-
 import datetime
 
-VERBOSE = False
 
 class flatcache:
 	def __init__(self):
